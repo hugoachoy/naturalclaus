@@ -1,3 +1,5 @@
 streamlit
+gspread
+oauth2client
+fpdf2
 pandas
-openpyxl
