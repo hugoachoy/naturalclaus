@@ -18,7 +18,6 @@ SPREADSHEET_NAME = "datos"   # ← Cambiá esto si tu archivo en Drive tiene otr
 # ─────────────────────────────────────────────
 def _get_sheet(sheet_name: str):
     """Devuelve la hoja de Google Sheets solicitada."""
-    import json
     scope = [
         "https://spreadsheets.google.com/feeds",
         "https://www.googleapis.com/auth/drive",
@@ -27,8 +26,20 @@ def _get_sheet(sheet_name: str):
         # Entorno local: usa el archivo JSON
         creds = ServiceAccountCredentials.from_json_keyfile_name("credenciales.json", scope)
     else:
-        # Streamlit Cloud: lee el JSON desde st.secrets
-        creds_dict = json.loads(st.secrets["gcp_service_account"]["credentials_json"])
+        # Streamlit Cloud: lee cada campo directo desde st.secrets
+        s = st.secrets["gcp_service_account"]
+        creds_dict = {
+            "type":                        str(s["type"]),
+            "project_id":                  str(s["project_id"]),
+            "private_key_id":              str(s["private_key_id"]),
+            "private_key":                 str(s["private_key"]),
+            "client_email":                str(s["client_email"]),
+            "client_id":                   str(s["client_id"]),
+            "auth_uri":                    str(s["auth_uri"]),
+            "token_uri":                   str(s["token_uri"]),
+            "auth_provider_x509_cert_url": str(s["auth_provider_x509_cert_url"]),
+            "client_x509_cert_url":        str(s["client_x509_cert_url"]),
+        }
         creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
 
     return gspread.authorize(creds).open(SPREADSHEET_NAME).worksheet(sheet_name)
