@@ -18,14 +18,20 @@ SPREADSHEET_NAME = "datos"   # ← Cambiá esto si tu archivo en Drive tiene otr
 # ─────────────────────────────────────────────
 def _get_sheet(sheet_name: str):
     """Devuelve la hoja de Google Sheets solicitada."""
+    import json
     scope = [
         "https://spreadsheets.google.com/feeds",
         "https://www.googleapis.com/auth/drive",
     ]
-    creds = ServiceAccountCredentials.from_json_keyfile_name("credenciales.json", scope)
-    client = gspread.authorize(creds)
-    spreadsheet = client.open(SPREADSHEET_NAME)
-    return spreadsheet.worksheet(sheet_name)
+    if Path("credenciales.json").exists():
+        # Entorno local: usa el archivo JSON
+        creds = ServiceAccountCredentials.from_json_keyfile_name("credenciales.json", scope)
+    else:
+        # Streamlit Cloud: lee el JSON desde st.secrets
+        creds_dict = json.loads(st.secrets["gcp_service_account"]["credentials_json"])
+        creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
+
+    return gspread.authorize(creds).open(SPREADSHEET_NAME).worksheet(sheet_name)
 
 
 @st.cache_data(ttl=60)   # ← Evita llamadas repetidas a la API en cada recarga
@@ -506,7 +512,7 @@ with tabs[3]:
 
         st.dataframe(
             df_display.style.map(
-                lambda v: "background-color: #ffe0e0" if isinstance(v, (int, float)) and v < umbral else "",
+                lambda v: "background-color: #e05555; color: #ffffff; font-weight: bold" if isinstance(v, (int, float)) and v < umbral else "",
                 subset=["stock_actual"],
             ),
             use_container_width=True,
